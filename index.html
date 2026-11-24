@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#111">
 <title>X-OVER DRIVE</title>
 <style>
-html,body{margin:0;height:100%;background:#111;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
-#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform-origin:center;background:#0b0b14;overflow:hidden;box-shadow:0 0 40px #000}
+html,body{margin:0;width:100%;height:100%;position:fixed;inset:0;background:#111;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+#stage{position:fixed;left:50%;top:50%;width:1280px;height:720px;transform-origin:center;background:#0b0b14;overflow:hidden;box-shadow:0 0 40px #000}
 #cv{position:absolute;inset:0;width:1280px;height:720px}
 #ui{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 45%,rgba(12,14,34,.45),rgba(4,4,12,.86));z-index:5;color:#fff}
 .menu{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;padding:20px;box-sizing:border-box}
@@ -3125,8 +3125,13 @@ ui.addEventListener('click',onAct); $('#tbar').addEventListener('click',onAct);
 setInterval(()=>{ if(NET.role==='host'&&APP.scr==='lobby'){ const before=JSON.stringify(APP.roster.map(r=>[r.id,r.name,r.ch,r.conn])); syncRoster(); if(JSON.stringify(APP.roster.map(r=>[r.id,r.name,r.ch,r.conn]))!==before) lobbyUI(); } },500);
 function goFull(){ const d=document.documentElement; try{ (d.requestFullscreen||d.webkitRequestFullscreen).call(d).then(()=>{ try{ screen.orientation.lock('landscape').catch(()=>{}); }catch(_){} }).catch(()=>{}); }catch(_){} }
 // 화면 비율 16:9 맞추기
-function fit(){ const s=$('#stage'); const sw=innerWidth, sh=innerHeight; const k=Math.min(sw/W,sh/H); s.style.transform=`translate(-50%,-50%) scale(${k})`; $('#rot').style.display=(isTouch&&sh>sw)?'flex':'none'; }
-addEventListener('resize',fit); addEventListener('orientationchange',()=>setTimeout(fit,200));
+const VPM=document.querySelector('meta[name=viewport]'), VPC=VPM?VPM.getAttribute('content'):'';
+function vpSize(){ const de=document.documentElement, vv=window.visualViewport; let sw=de.clientWidth||innerWidth, sh=de.clientHeight||innerHeight; if(vv&&Math.abs((vv.scale||1)-1)<0.01){ sw=vv.width; sh=vv.height; } return [sw,sh]; }
+function fit(){ const s=$('#stage'); const [sw,sh]=vpSize(); const k=Math.min(sw/W,sh/H); s.style.transform=`translate(-50%,-50%) scale(${k})`; $('#rot').style.display=(isTouch&&sh>sw)?'flex':'none';
+  if(VPM&&window.visualViewport&&visualViewport.scale>1.01){ VPM.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0'); setTimeout(()=>VPM.setAttribute('content',VPC),80); } try{ window.scrollTo(0,0); }catch(_){} }
+function fitSoon(){ fit(); [80,200,400,700,1100].forEach(t=>setTimeout(fit,t)); }
+addEventListener('resize',fitSoon); addEventListener('orientationchange',fitSoon); if(window.visualViewport) visualViewport.addEventListener('resize',fitSoon); try{ screen.orientation&&screen.orientation.addEventListener('change',fitSoon); }catch(_){}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) fitSoon(); });
 // 시작
 loadImgs(()=>{ fit(); if(isTouch) makePad($('#padwrap'),b=>{ PADL.bits=b; PADL.latch|=b; }); const m=location.hash.match(/j=([A-Z0-9]{4})/i); if(m){ joinUI(); } else titleUI(); requestAnimationFrame(loop); });
 window.__fg={get G(){ return G; },APP,NETP,KB,T:()=>T,startFight,tourStart};
